@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>一週間献立アプリ</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="min-h-screen bg-gradient-to-br from-orange-50 to-yellow-50 p-4 md:p-8">
+  <div class="max-w-6xl mx-auto">
+    <div class="text-center mb-8">
+      <div class="flex items-center justify-center gap-3 mb-2">
+        <svg class="w-10 h-10 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
+        </svg>
+        <h1 class="text-4xl font-bold text-gray-800">一週間献立プラン</h1>
+      </div>
+      <p class="text-gray-600">毎日の食事を計画して、健康的な生活を！</p>
+      
+      <div class="flex justify-center gap-3 mt-4">
+        <button id="generateBtn" class="px-6 py-3 bg-gradient-to-r from-orange-500 to-yellow-500 text-white rounded-lg hover:from-orange-600 hover:to-yellow-600 transition-all font-bold shadow-lg hover:shadow-xl flex items-center gap-2">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+          </svg>
+          <span>一週間分をランダム生成</span>
+        </button>
+
+        <!-- ✅ 追加：保存ボタン -->
+        <button id="saveBtn" class="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all font-bold shadow-lg hover:shadow-xl flex items-center gap-2">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v14m7-7H5"></path>
+          </svg>
+          保存
+        </button>
+      </div>
+    </div>
+
+    <div id="mealsGrid" class="grid md:grid-cols-3 gap-6 mb-6"></div>
+
+    <div class="bg-white rounded-xl shadow-lg p-6 mb-6">
+      <h2 class="text-2xl font-bold text-gray-800 mb-4 flex items-center gap-2">
+        <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+        </svg>
+        買い物リスト
+      </h2>
+      
+      <div class="flex gap-2 mb-4">
+        <input id="newItemInput" type="text" placeholder="食材や材料を追加" class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none">
+        <button id="addItemBtn" class="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium">
+          追加
+        </button>
+      </div>
+
+      <div id="shoppingList" class="space-y-2 max-h-64 overflow-y-auto">
+        <p class="text-gray-400 text-center py-4">買い物リストに項目を追加してください</p>
+      </div>
+    </div>
+
+    <div class="text-center">
+      <button id="clearAllBtn" class="px-8 py-3 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors font-medium shadow-md hover:shadow-lg">
+        全てクリア
+      </button>
+    </div>
+  </div>
+
+  <script>
+    const daysOfWeek = ['月曜日', '火曜日', '水曜日', '木曜日', '金曜日', '土曜日', '日曜日'];
+    const mealTypes = ['朝食', '昼食', '夕食'];
+    
+    const mealDatabase = {
+      朝食: ['トースト＆目玉焼き', '和定食（ご飯・味噌汁・焼き魚）', 'フレンチトースト', 'おにぎり＆味噌汁', 'パンケーキ', 'ヨーグルト＆フルーツ', '納豆ご飯', 'ベーコンエッグ', 'おかゆ', 'サンドイッチ', 'オートミール', 'スムージーボウル'],
+      昼食: ['カレーライス', 'ラーメン', 'パスタ', 'うどん', 'そば', '牛丼', 'チャーハン', 'オムライス', '親子丼', 'サンドイッチ', '焼きそば', 'お好み焼き', '天丼', 'ハンバーガー', 'ピザ', '冷やし中華', 'そうめん', '海鮮丼'],
+      夕食: ['ハンバーグ', '生姜焼き', '鶏の唐揚げ', 'サバの味噌煮', '肉じゃが', '餃子', 'とんかつ', '鍋料理', 'すき焼き', '麻婆豆腐', '焼き魚定食', 'ステーキ', 'エビフライ', 'グラタン', 'ビーフシチュー', '豚の角煮', '刺身定食', 'しゃぶしゃぶ', 'カレー', 'パスタ', '天ぷら', 'ロールキャベツ', '鮭のホイル焼き', 'チキン南蛮']
+    };
+
+    let meals = {};
+    let shoppingList = [];
+
+    function init() {
+      daysOfWeek.forEach(day => {
+        meals[day] = { '朝食': '', '昼食': '', '夕食': '' };
+      });
+      renderMeals();
+    }
+
+    function getRandomMeal(mealType) {
+      const options = mealDatabase[mealType];
+      return options[Math.floor(Math.random() * options.length)];
+    }
+
+    function generateRandomWeek() {
+      const newMeals = {};
+      daysOfWeek.forEach(day => {
+        newMeals[day] = { '朝食': getRandomMeal('朝食'), '昼食': getRandomMeal('昼食'), '夕食': getRandomMeal('夕食') };
+      });
+      meals = newMeals;
+      renderMeals();
+    }
+
+    function randomizeDay(day) {
+      meals[day] = { '朝食': getRandomMeal('朝食'), '昼食': getRandomMeal('昼食'), '夕食': getRandomMeal('夕食') };
+      renderMeals();
+    }
+
+    function updateMeal(day, mealType, value) {
+      if (!meals[day]) meals[day] = { '朝食': '', '昼食': '', '夕食': '' };
+      meals[day][mealType] = value;
+    }
+
+    function clearDay(day) {
+      meals[day] = { '朝食': '', '昼食': '', '夕食': '' };
+      renderMeals();
+    }
+
+    function clearAll() {
+      daysOfWeek.forEach(day => {
+        meals[day] = { '朝食': '', '昼食': '', '夕食': '' };
+      });
+      shoppingList = [];
+      renderMeals();
+      renderShoppingList();
+    }
+
+    function renderMeals() {
+      const grid = document.getElementById('mealsGrid');
+      grid.innerHTML = '';
+
+      daysOfWeek.forEach(day => {
+        const card = document.createElement('div');
+        card.className = 'bg-white rounded-xl shadow-lg p-5 hover:shadow-xl transition-shadow';
+
+        card.innerHTML = `
+          <div class="flex items-center justify-between mb-4">
+            <div class="flex items-center gap-2">
+              <svg class="w-5 h-5 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+              </svg>
+              <h2 class="text-xl font-bold text-gray-800">${day}</h2>
+            </div>
+            <div class="flex gap-2">
+              <button onclick="randomizeDay('${day}')" class="text-orange-500 hover:text-orange-700 transition-colors" title="この日をランダム">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                </svg>
+              </button>
+              <button onclick="clearDay('${day}')" class="text-gray-400 hover:text-red-500 transition-colors" title="クリア">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                </svg>
+              </button>
+            </div>
+          </div>
+          
+          <div class="space-y-3">
+            ${mealTypes.map(mealType => `
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">${mealType}</label>
+                <input 
+                  type="text" 
+                  value="${meals[day] && meals[day][mealType] ? meals[day][mealType] : ''}" 
+                  oninput="updateMeal('${day}', '${mealType}', this.value)"
+                  placeholder="メニューを入力"
+                  class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none transition-all"
+                >
+              </div>
+            `).join('')}
+          </div>
+        `;
+
+        grid.appendChild(card);
+      });
+    }
+
+    function addToShopping() {
+      const input = document.getElementById('newItemInput');
+      const item = input.value.trim();
+      if (item) {
+        shoppingList.push({ item: item, checked: false });
+        input.value = '';
+        renderShoppingList();
+      }
+    }
+
+    function toggleShoppingItem(index) {
+      shoppingList[index].checked = !shoppingList[index].checked;
+      renderShoppingList();
+    }
+
+    function removeShoppingItem(index) {
+      shoppingList.splice(index, 1);
+      renderShoppingList();
+    }
+
+    function renderShoppingList() {
+      const list = document.getElementById('shoppingList');
+      if (shoppingList.length === 0) {
+        list.innerHTML = '<p class="text-gray-400 text-center py-4">買い物リストに項目を追加してください</p>';
+        return;
+      }
+
+      list.innerHTML = shoppingList.map((item, index) => `
+        <div class="flex items-center gap-3 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+          <input type="checkbox" ${item.checked ? 'checked' : ''} onchange="toggleShoppingItem(${index})" class="w-5 h-5 text-green-600 rounded focus:ring-2 focus:ring-green-500">
+          <span class="flex-1 ${item.checked ? 'line-through text-gray-400' : 'text-gray-800'}">${item.item}</span>
+          <button onclick="removeShoppingItem(${index})" class="text-red-500 hover:text-red-700 transition-colors">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+            </svg>
+          </button>
+        </div>
+      `).join('');
+    }
+
+    // ✅ 保存機能（追加部分）
+    function saveAsHTML() {
+      const content = document.documentElement.outerHTML;
+      const blob = new Blob([content], { type: 'text/html' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'kondate_saved.html';
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    // イベント登録
+    document.getElementById('generateBtn').addEventListener('click', generateRandomWeek);
+    document.getElementById('addItemBtn').addEventListener('click', addToShopping);
+    document.getElementById('newItemInput').addEventListener('keypress', e => { if (e.key === 'Enter') addToShopping(); });
+    document.getElementById('clearAllBtn').addEventListener('click', clearAll);
+    document.getElementById('saveBtn').addEventListener('click', saveAsHTML);
+
+    init();
+  </script>
+</body>
+</html>
